@@ -1,0 +1,56 @@
+# ==========================================
+# Variáveis de Ambiente e Segredos
+# ==========================================
+.env
+*.env
+!.env.example
+
+# ==========================================
+# Terraform - Estado e Cache Local
+# ==========================================
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan
+
+# ==========================================
+# Pacotes Temporários e Artefatos de Build
+# ==========================================
+lambda.zip
+response.json
+*.zip
+*.tar.gz
+dv.sh
+
+# ==========================================
+# Python - Cache e Ambientes Virtuais
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# ==========================================
+# IDEs, Editores de Texto e SO
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

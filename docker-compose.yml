@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:latest
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway HTTP/HTTPS
+      - "127.0.0.1:4510-4559:4510-4559"  # Portas de serviços secundários
+    env_file:
+      - .env
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      - SERVICES=s3,kinesis,firehose,lambda,events,iam,logs,apigateway
+      - AWS_DEFAULT_REGION=us-east-1
+      - LAMBDA_DOCKER_NETWORK=iac_network
+      - MAIN_CONTAINER_NAME=localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - iac_network
+
+  fastapi-app:
+    container_name: fastapi-app
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    networks:
+      - iac_network
+    restart: always
+
+  terraform:
+    container_name: terraform-runner
+    image: hashicorp/terraform:latest
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      - AWS_ACCESS_KEY_ID=mock_access_key
+      - AWS_SECRET_ACCESS_KEY=mock_secret_key
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        echo 'Aguardando inicialização do LocalStack...'
+        until wget -qO- http://localstack:4566/_localstack/health | grep -q '"s3": "running"\|"s3": "available"'; do
+          sleep 2
+        done
+        echo 'LocalStack pronto! Executando Terraform Init...'
+        terraform init
+        echo 'Executando Terraform Apply...'
+        terraform apply -auto-approve -var='localstack_host=localstack'
+        echo 'Infraestrutura AWS local provisionada com sucesso!'
+    depends_on:
+      - localstack
+      - fastapi-app
+    networks:
+      - iac_network
+
+networks:
+  iac_network:
+    name: iac_network
+    driver: bridge
